@@ -26,6 +26,23 @@ fn ansi_style_for_path(lscolors: &LsColors, path: &Path) -> ansi_term::Style {
 
 impl PathTrie {
     fn contains_singleton_dir(&self) -> bool {
+        if let Some(x) = self.trie.iter().next() {
+            #[cfg(debug_assertions)] {
+                eprintln!("\n\n");
+                dbg!(&self.trie);
+                dbg!(&self.trie.iter());
+                dbg!(&x);
+                eprintln!("<\x1b[93m{}\x1b[0m>", x.0.display());
+            }
+            
+            if let Some(m) = x.1.trie.iter().next() {
+                if m.1.trie.is_empty() {
+                    return false;
+                }
+            }
+        }
+        
+        // return true if the length is one and next node isn't empty
         self.trie.len() == 1 && !self.trie.iter().next().unwrap().1.trie.is_empty()
     }
 
@@ -55,7 +72,8 @@ impl PathTrie {
             let current_path = parent_path.join(path);
             let style = ansi_style_for_path(&lscolors, &current_path);
 
-            let contains_singleton_dir = it.contains_singleton_dir();
+            // let contains_singleton_dir = it.contains_singleton_dir();
+            let contains_singleton_dir = top;
 
             let painted = match full_path {
                 false => style.paint(path.to_string_lossy()),
@@ -76,6 +94,15 @@ impl PathTrie {
 
             let newline = if contains_singleton_dir { "" } else { "\n" };
             let is_last = idx == self.trie.len() - 1;
+            
+            dbg!(&it, &current_path);
+            dbg!(&contains_singleton_dir);
+            dbg!(&full_path);
+            dbg!(&join_with_parent);
+            dbg!(&top);
+            dbg!(&is_last);
+            dbg!(&newline);
+            dbg!(&parent_path.display());
 
             let next_prefix = if join_with_parent {
                 let joiner = if full_path || top || parent_path == PathBuf::from("/") {
